@@ -43,7 +43,7 @@
 
 ## :dart: About ##
 
-A simple Arkanoid made by myself.
+A simple Arkanoid made by myself, take note that I did this in a very short time.
 
 ## :sparkles: Features ##
 
