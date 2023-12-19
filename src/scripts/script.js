@@ -5,16 +5,41 @@ Made by: https://github.com/Raxuis
 const myCanvas = document.getElementById('myCanvas');
 const context = myCanvas.getContext('2d');
 const grid = 15;
-const paddleWidth = grid * 5; // 75
+const paddleWidth = grid * 10; // 75
 const maxPaddleY = myCanvas.width - grid - paddleWidth;
 const startButton = document.getElementById('start');
 const resetButton = document.getElementById('reset');
 const lifeHTML = document.getElementById('life');
-let lives = 3;
+const scoreHTML = document.getElementById('score');
 
+let lives = 3;
+let score = 0;
 var paddleSpeed = 4;
 var ballSpeed = 3;
 
+let blocks = [
+    { x: grid * 4, y: grid * 3, width: 100, height: 25 },
+    { x: grid * 13, y: grid * 3, width: 100, height: 25 },
+    { x: grid * 22, y: grid * 3, width: 100, height: 25 },
+    { x: grid * 31, y: grid * 3, width: 100, height: 25 },
+    { x: grid * 40, y: grid * 3, width: 100, height: 25 },
+    { x: grid * 4, y: grid * 6, width: 100, height: 25 },
+    { x: grid * 13, y: grid * 6, width: 100, height: 25 },
+    { x: grid * 22, y: grid * 6, width: 100, height: 25 },
+    { x: grid * 31, y: grid * 6, width: 100, height: 25 },
+    { x: grid * 40, y: grid * 6, width: 100, height: 25 },
+    { x: grid * 4, y: grid * 9, width: 100, height: 25 },
+    { x: grid * 13, y: grid * 9, width: 100, height: 25 },
+    { x: grid * 22, y: grid * 9, width: 100, height: 25 },
+    { x: grid * 31, y: grid * 9, width: 100, height: 25 },
+    { x: grid * 40, y: grid * 9, width: 100, height: 25 },
+    { x: grid * 4, y: grid * 12, width: 100, height: 25 },
+    { x: grid * 13, y: grid * 12, width: 100, height: 25 },
+    { x: grid * 22, y: grid * 12, width: 100, height: 25 },
+    { x: grid * 31, y: grid * 12, width: 100, height: 25 },
+    { x: grid * 40, y: grid * 12, width: 100, height: 25 },
+
+]
 
 const paddle = {
     // start in the middle of the game on the right side
@@ -51,71 +76,103 @@ function collides(obj1, obj2) {
 }
 function update() {
     lifeHTML.innerHTML = `Lives : ${lives}`
+    scoreHTML.innerHTML = `Score : ${score}`
 }
 // game loop
 function loop() {
     if (lives >= 0) {
-        requestAnimationFrame(loop);
-        // RESET DRAW
-        context.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        if (blocks.length !== 0) {
+            requestAnimationFrame(loop);
+            // RESET DRAW
+            context.clearRect(0, 0, myCanvas.width, myCanvas.height);
 
-        // move paddles by their velocity
-        paddle.x += paddle.dx;
+            // move paddles by their velocity
+            paddle.x += paddle.dx;
 
-        // prevent paddles from going through walls
-        if (paddle.x < grid) {
-            paddle.x = grid;
+            // prevent paddles from going through walls
+            if (paddle.x < grid) {
+                paddle.x = grid;
+            }
+            else if (paddle.x > maxPaddleY) {
+                paddle.x = maxPaddleY;
+            }
+
+            // draw paddles
+            context.fillStyle = 'white';
+            context.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            // draw blocks
+            const image = new Image();
+            image.src = '../assets/block.png';
+
+
+            // Create a pattern using the image
+            const pattern = context.createPattern(image, 'repeat');
+
+            // Set the pattern as the fillStyle and draw the rectangles
+            let index = 0;
+            blocks.forEach((ele, i) => {
+                context.fillStyle = pattern;
+                context.fillRect(ele.x, ele.y, ele.width, ele.height);
+                if (collides(blocks[index], ball)) {
+                    score += 10;
+                    update();
+                    blocks.splice(index, 1);
+                    ball.dy *= -1;
+                    ball.dx *= -1;
+                }
+                index++;
+            });
+            context.fillStyle = 'white';
+
+
+            // move ball by its velocity
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // prevent ball from going through walls by changing its velocity
+            if (ball.y < grid) {
+                ball.y = grid;
+                ball.dy *= -1;
+            }
+            else if (ball.x < 0) {
+                ball.x = grid
+                ball.dx *= -1;
+            } else if (ball.x > myCanvas.width - grid) {
+                ball.x = myCanvas.width - grid;
+                ball.dx *= -1;
+            }
+
+            // reset ball if it goes past paddle (but only if we haven't already done so)
+            if (ball.y > myCanvas.height && !ball.resetting) {
+                lives--;
+                wait = true
+                resetGame(wait);
+            }
+
+            // check to see if ball collides with paddle. if they do change x velocity
+            if (collides(ball, paddle)) {
+                ball.dy *= -1;
+
+                // move ball next to the paddle otherwise the collision will happen again
+                // in the next frame
+                ball.y = paddle.y - ball.height;
+            }
+
+            // draw ball
+            context.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+            // draw walls
+            context.fillStyle = 'lightgrey';
+            context.fillRect(0, 0, grid, myCanvas.height);
+            context.fillRect(0, 0, myCanvas.width, grid);
+            context.fillRect(myCanvas.width - grid, 0, grid, myCanvas.height);
+        } else {
+            alert('You won !!')
+            location.reload();
         }
-        else if (paddle.x > maxPaddleY) {
-            paddle.x = maxPaddleY;
-        }
-
-        // draw paddles
-        context.fillStyle = 'white';
-        context.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-
-        // move ball by its velocity
-        ball.x += ball.dx;
-        ball.y += ball.dy;
-
-        // prevent ball from going through walls by changing its velocity
-        if (ball.y < grid) {
-            ball.y = grid;
-            ball.dy *= -1;
-        }
-        else if (ball.x < 0) {
-            ball.x = grid
-            ball.dx *= -1;
-        } else if (ball.x > myCanvas.width - grid) {
-            ball.x = myCanvas.width - grid;
-            ball.dx *= -1;
-        }
-
-        // reset ball if it goes past paddle (but only if we haven't already done so)
-        if (ball.y > myCanvas.height && !ball.resetting) {
-            lives--;
-            wait = true
-            resetGame(wait);
-        }
-
-        // check to see if ball collides with paddle. if they do change x velocity
-        if (collides(ball, paddle)) {
-            ball.dy *= -1;
-
-            // move ball next to the paddle otherwise the collision will happen again
-            // in the next frame
-            ball.y = paddle.y - ball.height;
-        }
-
-        // draw ball
-        context.fillRect(ball.x, ball.y, ball.width, ball.height);
-
-        // draw walls
-        context.fillStyle = 'lightgrey';
-        context.fillRect(0, 0, grid, myCanvas.height);
-        context.fillRect(0, 0, myCanvas.width, grid);
-        context.fillRect(myCanvas.width - grid, 0, grid, myCanvas.height);
     } else {
+        alert('You lost !!')
         location.reload();
     }
 
@@ -144,7 +201,12 @@ document.addEventListener('keyup', function (e) {
 
 // start the game
 startButton.addEventListener('click', () => {
+    myCanvas.style.backgroundImage = 'url("../assets/background.png")';
+    myCanvas.style.backgroundSize = 'cover';
+    myCanvas.style.backgroundRepeat = 'no-repeat';
+    myCanvas.style.backgroundPosition = 'center';
     lifeHTML.innerHTML = `Lives : ${lives}`
+    scoreHTML.innerHTML = `Score : ${score}`
     startButton.disabled = true;
     requestAnimationFrame(loop);
 })
@@ -164,6 +226,7 @@ function resetGame(wait) {
         }, 2000);
     } else {
         lives = 3;
+        score = 0;
         ball.resetting = false;
         ball.x = myCanvas.width / 2;
         ball.y = myCanvas.height / 2;
